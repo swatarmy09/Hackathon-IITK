@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Financialstory" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    </style>
+    <string name="cohere_api_key">o65D2UYjsFAqBNKwOgtQP81YzYr2XjSMMANo4Vcq</string>
+
+    <style name="Theme.Financialstory" parent="Base.Theme.Financialstory" />
+</resources>

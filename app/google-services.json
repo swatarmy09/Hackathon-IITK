@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "765088895247",
+    "project_id": "todo-app-e9f78",
+    "storage_bucket": "todo-app-e9f78.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765088895247:android:2eac77585afc5f1ba7ee7a",
+        "android_client_info": {
+          "package_name": "com.example.financialstory"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZgmNob8DUH-njvZAleGUKdX_ITc2xYdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765088895247:android:c6f40b231cf41fa4a7ee7a",
+        "android_client_info": {
+          "package_name": "com.example.testing1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZgmNob8DUH-njvZAleGUKdX_ITc2xYdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765088895247:android:5e782938e6a71f0ba7ee7a",
+        "android_client_info": {
+          "package_name": "com.example.todo_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZgmNob8DUH-njvZAleGUKdX_ITc2xYdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
