@@ -13,7 +13,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,10 +25,12 @@
         <activity
             android:name=".UploadActivity"
          />
+<activity android:name=".NewsActivity"/>
 
         <activity
             android:name=".DashboardActivity"
           />
+        <activity android:name=".MainActivity"/>
 
         <activity
             android:name=".ChatbotActivity"

@@ -11,6 +11,7 @@ import androidx.appcompat.widget.Toolbar;
 public class MainActivity extends AppCompatActivity {
 
     private Button uploadButton;
+    private Button AiNews;
     private Button dashboardButton;
     private Button chatbotButton;
 
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize UI components
         uploadButton = findViewById(R.id.upload_button);
+        AiNews = findViewById(R.id.chtbot_button);
         dashboardButton = findViewById(R.id.dashboard_button);
         chatbotButton = findViewById(R.id.chatbot_button);
 
@@ -36,6 +38,16 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this, UploadActivity.class));
             }
         });
+
+        // Set click listeners
+        AiNews.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, NewsActivity.class));
+            }
+        });
+
+
 
         dashboardButton.setOnClickListener(new View.OnClickListener() {
             @Override
