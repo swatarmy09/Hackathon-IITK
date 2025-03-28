@@ -18,7 +18,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginEnd="8dp"
-            android:src="@drawable/ic_launcher_background"
+            android:src="@color/colorPrimaryDark"
             app:civ_border_color="@color/colorPrimary"
             app:civ_border_width="1dp" />
 
@@ -31,7 +31,7 @@
                 android:id="@+id/tvMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/ic_launcher_background"
+                android:background="@color/colorPrimaryDark"
                 android:maxWidth="260dp"
                 android:padding="12dp"
                 android:textAppearance="@style/Theme.Design.NoActionBar" />

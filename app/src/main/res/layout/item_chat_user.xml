@@ -12,7 +12,7 @@
         android:id="@+id/message_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/ic_launcher_background"
+        android:background="@color/colorPrimaryDark"
         android:maxWidth="260dp"
         android:padding="12dp"
         android:textColor="@android:color/white"

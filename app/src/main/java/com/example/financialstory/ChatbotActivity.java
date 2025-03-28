@@ -2,28 +2,27 @@ package com.example.financialstory;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import androidx.annotation.NonNull;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.financialstory.adapters.ChatAdapter;
 import com.example.financialstory.models.ChatMessage;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -39,13 +38,9 @@ public class ChatbotActivity extends AppCompatActivity {
     private ChatAdapter chatAdapter;
     private List<ChatMessage> chatMessages;
     private Handler handler = new Handler();
-    private boolean isFirstMessage = true; // Track first message
 
-    private static final String API_KEY = "YOUR_COHERE_API_KEY"; // Replace with your Cohere API key
+    private static final String API_KEY = "uJvjzqyFc51Vg6pU814dXCPiilq2K3nybGe7Sl22"; // Replace with your Cohere API key
     private static final String API_URL = "https://api.cohere.com/v1/generate";
-
-    // Firebase Database Reference
-    private DatabaseReference chatDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,32 +66,24 @@ public class ChatbotActivity extends AppCompatActivity {
         chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         chatRecyclerView.setAdapter(chatAdapter);
 
-        // Initialize Firebase Database
-        chatDatabase = FirebaseDatabase.getInstance().getReference("chatHistory");
-
-        // Load previous chats from Firebase
-        loadChatHistory();
-
-        // Add welcome message only if there are no previous messages
-        if (chatMessages.isEmpty()) {
-            addMessageToChat("Hello! I'm your financial assistant. Ask me anything about your finances.", false);
-        }
+        // Add welcome message
+        chatMessages.add(new ChatMessage("Hello! I'm your financial assistant. Ask me anything about your finances.", false));
+        chatAdapter.notifyDataSetChanged();
 
         // Set click listener for send button
         sendButton.setOnClickListener(v -> {
             String message = messageInput.getText().toString().trim();
-            if (!TextUtils.isEmpty(message)) {
+            if (!message.isEmpty()) {
                 sendMessage(message);
             }
         });
     }
 
     private void sendMessage(String message) {
-        // Show user message in chat
-        addMessageToChat(message, true);
-
-        // Clear input field
+        chatMessages.add(new ChatMessage(message, true));
+        chatAdapter.notifyItemInserted(chatMessages.size() - 1);
         messageInput.setText("");
+        chatRecyclerView.smoothScrollToPosition(chatMessages.size() - 1);
 
         // Show typing animation
         ChatMessage typingMessage = new ChatMessage("Typing...", false);
@@ -104,13 +91,9 @@ public class ChatbotActivity extends AppCompatActivity {
         chatAdapter.notifyItemInserted(chatMessages.size() - 1);
         chatRecyclerView.smoothScrollToPosition(chatMessages.size() - 1);
 
-        // Modify first message to be finance-related
-        String finalMessage = isFirstMessage ? "Give financial advice about: " + message : message;
-        isFirstMessage = false; // Update flag after first message
-
         // Send request to Cohere API
         new Thread(() -> {
-            String response = getCohereResponse(finalMessage);
+            String response = getCohereResponse(message);
             if (response == null || response.trim().isEmpty()) {
                 response = "I'm sorry, but I couldn't generate a response. Please try again.";
             }
@@ -122,7 +105,9 @@ public class ChatbotActivity extends AppCompatActivity {
                 chatAdapter.notifyDataSetChanged();
 
                 // Add AI response
-                addMessageToChat(finalResponse, false);
+                chatMessages.add(new ChatMessage(finalResponse, false));
+                chatAdapter.notifyItemInserted(chatMessages.size() - 1);
+                chatRecyclerView.smoothScrollToPosition(chatMessages.size() - 1);
             });
         }).start();
     }
@@ -168,37 +153,5 @@ public class ChatbotActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return null;
-    }
-
-    private void addMessageToChat(String text, boolean isUser) {
-        ChatMessage chatMessage = new ChatMessage(text, isUser);
-        chatMessages.add(chatMessage);
-        chatAdapter.notifyItemInserted(chatMessages.size() - 1);
-        chatRecyclerView.smoothScrollToPosition(chatMessages.size() - 1);
-
-        // Save message to Firebase
-        chatDatabase.push().setValue(chatMessage);
-    }
-
-    private void loadChatHistory() {
-        chatDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                chatMessages.clear(); // Clear previous messages
-                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                    ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
-                    if (chatMessage != null) {
-                        chatMessages.add(chatMessage);
-                    }
-                }
-                chatAdapter.notifyDataSetChanged();
-                chatRecyclerView.smoothScrollToPosition(chatMessages.size() - 1);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                // Handle potential errors
-            }
-        });
     }
 }

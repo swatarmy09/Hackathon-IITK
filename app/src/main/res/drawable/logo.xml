@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#A64D79"
+        android:pathData="M50,2A48,48 0 1,1 2,50A48,48 0 1,1 50,2Z"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"/>
+
+    <!-- Money Symbol (₹) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,30 L70,30 L70,35 L45,35 L45,40 L70,40 L70,45 L45,45 C50,55 60,55 70,55 L70,60 C60,60 50,60 40,50 L30,50 L30,45 L38,45 C35,40 35,35 30,35 L30,30 L40,30Z"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"/>
+</vector>
