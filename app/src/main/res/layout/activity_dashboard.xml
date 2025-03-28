@@ -4,23 +4,24 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground"
-    tools:context=".DashboardActivity">
+    android:background="@color/colorBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp">
 
+        <!-- Toolbar -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/colorPrimary"
             android:elevation="4dp"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-            app:layout_constraintTop_toTopOf="parent"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+            tools:ignore="MissingConstraints" />
 
+        <!-- Dashboard Title -->
         <TextView
             android:id="@+id/dashboard_title"
             android:layout_width="wrap_content"
@@ -30,34 +31,22 @@
             android:textColor="@color/colorAccent"
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/story_card"
+        <!-- RecyclerView for Financial Stories -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/story_recycler_view"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/colorPrimaryDark"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:nestedScrollingEnabled="false"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/dashboard_title">
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/dashboard_title" />
 
-            <TextView
-                android:id="@+id/story_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:text="Loading your financial story..."
-                android:textColor="@android:color/white"
-                android:textSize="16sp" />
-        </androidx.cardview.widget.CardView>
-
+        <!-- Spending Analysis Title -->
         <TextView
             android:id="@+id/charts_title"
             android:layout_width="wrap_content"
@@ -67,59 +56,59 @@
             android:textColor="@color/colorAccent"
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/story_card" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/story_recycler_view" />
 
+        <!-- Pie Chart for Category-wise Spending -->
+
+        <!-- Bar Chart for Monthly Spending -->
         <com.github.mikephil.charting.charts.PieChart
             android:id="@+id/category_pie_chart"
             android:layout_width="0dp"
-            android:layout_height="300dp"
-            android:layout_marginStart="16dp"
+            android:layout_height="250dp"
             android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/charts_title" />
 
         <com.github.mikephil.charting.charts.BarChart
             android:id="@+id/monthly_bar_chart"
             android:layout_width="0dp"
-            android:layout_height="300dp"
-            android:layout_marginStart="16dp"
+            android:layout_height="250dp"
             android:layout_marginTop="24dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="24dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/category_pie_chart" />
 
+        <!-- Progress Bar (Loading Indicator) -->
         <ProgressBar
             android:id="@+id/loading_progress_bar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
             android:indeterminateTint="@color/colorAccent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/charts_title"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/charts_title" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
+        <!-- No Data Message -->
         <TextView
             android:id="@+id/no_data_text"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
-            android:gravity="center"
+            android:layout_marginTop="16dp"
             android:text="No transaction data available. Upload a statement to see your spending analysis."
             android:textColor="@color/colorTextSecondary"
             android:textSize="16sp"
+            android:gravity="center"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/charts_title" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.core.widget.NestedScrollView>

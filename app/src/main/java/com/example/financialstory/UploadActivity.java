@@ -1,14 +1,11 @@
 package com.example.financialstory;
 
-import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
@@ -22,7 +19,8 @@ import com.example.financialstory.models.Transaction;
 import com.example.financialstory.utils.CSVParser;
 import com.example.financialstory.utils.PDFExtractor;
 import com.example.financialstory.utils.CohereApiClient;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +37,7 @@ public class UploadActivity extends AppCompatActivity {
     private Button uploadPdfButton, uploadCsvButton;
     private TextView statusText;
     private ProgressDialog progressDialog;
-    private FirebaseFirestore db;
+    private DatabaseReference databaseRef;
     private String userId = "default_user";
 
     @Override
@@ -54,7 +52,7 @@ public class UploadActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        db = FirebaseFirestore.getInstance();
+        databaseRef = FirebaseDatabase.getInstance().getReference("users").child(userId);
 
         uploadPdfButton = findViewById(R.id.upload_pdf_button);
         uploadCsvButton = findViewById(R.id.upload_csv_button);
@@ -87,7 +85,6 @@ public class UploadActivity extends AppCompatActivity {
                 return;
             }
 
-            // Show Loading Activity
             startActivity(new Intent(this, LoadingActivity.class));
 
             if (requestCode == REQUEST_PDF) {
@@ -103,7 +100,7 @@ public class UploadActivity extends AppCompatActivity {
             if (inputStream == null) throw new IOException("Failed to open file");
 
             List<Transaction> transactions = PDFExtractor.extractTransactions(inputStream);
-            saveTransactionsToFirebase(transactions);
+            saveTransactionsToDatabase(transactions);
 
         } catch (Exception e) {
             progressDialog.dismiss();
@@ -117,7 +114,7 @@ public class UploadActivity extends AppCompatActivity {
             if (inputStream == null) throw new IOException("Failed to open file");
 
             List<Transaction> transactions = CSVParser.parseTransactions(inputStream);
-            saveTransactionsToFirebase(transactions);
+            saveTransactionsToDatabase(transactions);
 
         } catch (Exception e) {
             progressDialog.dismiss();
@@ -126,12 +123,15 @@ public class UploadActivity extends AppCompatActivity {
         }
     }
 
-    private void saveTransactionsToFirebase(final List<Transaction> transactions) {
+    private void saveTransactionsToDatabase(final List<Transaction> transactions) {
         if (!isNetworkAvailable()) {
             Toast.makeText(this, "No internet!", Toast.LENGTH_LONG).show();
             progressDialog.dismiss();
             return;
         }
+
+        String transactionId = String.valueOf(System.currentTimeMillis());
+        DatabaseReference transactionRef = databaseRef.child("statements").child(transactionId);
 
         List<Map<String, Object>> transactionMaps = new ArrayList<>();
         for (Transaction transaction : transactions) {
@@ -147,13 +147,11 @@ public class UploadActivity extends AppCompatActivity {
         data.put("transactions", transactionMaps);
         data.put("timestamp", System.currentTimeMillis());
 
-        db.collection("users").document(userId)
-                .collection("statements").document(String.valueOf(System.currentTimeMillis()))
-                .set(data)
+        transactionRef.setValue(data)
                 .addOnSuccessListener(aVoid -> {
                     progressDialog.dismiss();
                     statusText.setText("Successfully processed " + transactions.size() + " transactions.");
-                    generateFinancialStory(transactions);
+                    generateFinancialStory(transactionId, transactions);
                 })
                 .addOnFailureListener(e -> {
                     progressDialog.dismiss();
@@ -162,7 +160,7 @@ public class UploadActivity extends AppCompatActivity {
                 });
     }
 
-    private void generateFinancialStory(List<Transaction> transactions) {
+    private void generateFinancialStory(String transactionId, List<Transaction> transactions) {
         progressDialog.setTitle("AI Analysis");
         progressDialog.setMessage("Generating financial story...");
         progressDialog.show();
@@ -181,6 +179,7 @@ public class UploadActivity extends AppCompatActivity {
             @Override
             public void onSuccess(String story) {
                 progressDialog.dismiss();
+                saveFinancialStoryToDatabase(transactionId, story);
                 Toast.makeText(UploadActivity.this, "Financial story generated!", Toast.LENGTH_LONG).show();
                 startActivity(new Intent(UploadActivity.this, DashboardActivity.class));
                 finish();
@@ -194,10 +193,16 @@ public class UploadActivity extends AppCompatActivity {
         });
     }
 
+    private void saveFinancialStoryToDatabase(String transactionId, String story) {
+        DatabaseReference storyRef = databaseRef.child("statements").child(transactionId).child("financialStory");
+        storyRef.setValue(story)
+                .addOnSuccessListener(aVoid -> statusText.setText("Financial story saved successfully!"))
+                .addOnFailureListener(e -> Toast.makeText(UploadActivity.this, "Error saving story: " + e.getMessage(), Toast.LENGTH_LONG).show());
+    }
+
     private boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
     }
 }
-

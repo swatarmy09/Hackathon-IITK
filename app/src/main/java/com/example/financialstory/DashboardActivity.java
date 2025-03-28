@@ -4,12 +4,15 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.financialstory.adapters.StoryAdapter;
+import com.example.financialstory.models.Story;
 import com.example.financialstory.models.Transaction;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
@@ -19,13 +22,14 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -33,111 +37,93 @@ import java.util.Map;
 
 public class DashboardActivity extends AppCompatActivity {
 
-    private TextView storyText;
+    private RecyclerView storyRecyclerView;
+    private ProgressBar loadingProgressBar;
     private PieChart categoryPieChart;
     private BarChart monthlyBarChart;
-    private ProgressBar loadingProgressBar;
-    private TextView noDataText;
+    private StoryAdapter storyAdapter;
+    private List<Story> storyList;
 
-    private FirebaseFirestore db;
-    private String userId = "default_user"; // Static user ID
+    private DatabaseReference dbRef;
+    private String userId = "default_user"; // Static user ID (Change if needed)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        // Set up toolbar
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Financial Dashboard");
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
-
-        // Initialize Firestore
-        db = FirebaseFirestore.getInstance();
-
         // Initialize UI components
-        storyText = findViewById(R.id.story_text);
+        storyRecyclerView = findViewById(R.id.story_recycler_view);
+        loadingProgressBar = findViewById(R.id.loading_progress_bar);
         categoryPieChart = findViewById(R.id.category_pie_chart);
         monthlyBarChart = findViewById(R.id.monthly_bar_chart);
-        loadingProgressBar = findViewById(R.id.loading_progress_bar);
-        noDataText = findViewById(R.id.no_data_text);
 
-        // Load data
-        loadData();
+        storyRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        storyList = new ArrayList<>();
+        storyAdapter = new StoryAdapter(storyList);
+        storyRecyclerView.setAdapter(storyAdapter);
+
+        // Initialize Firebase Realtime Database reference
+        dbRef = FirebaseDatabase.getInstance().getReference("users").child(userId);
+
+        // Load all data
+        loadStories();
+        loadTransactions();
     }
 
-    private void loadData() {
+    private void loadStories() {
         loadingProgressBar.setVisibility(View.VISIBLE);
-        noDataText.setVisibility(View.GONE);
-
-        // Load the latest financial story
-        db.collection("users").document(userId)
-                .collection("stories")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(1)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String story = document.getString("content");
-                            runOnUiThread(() -> storyText.setText(story));
-                        }
-                    } else {
-                        runOnUiThread(() -> storyText.setText("No financial story available yet. Upload a statement to generate insights."));
+        dbRef.child("stories").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                storyList.clear();
+                for (DataSnapshot storySnapshot : snapshot.getChildren()) {
+                    Story story = storySnapshot.getValue(Story.class);
+                    if (story != null) {
+                        storyList.add(story);
                     }
-                });
+                }
+                storyAdapter.notifyDataSetChanged();
+                loadingProgressBar.setVisibility(View.GONE);
+            }
 
-        // Load the latest transactions
-        db.collection("users").document(userId)
-                .collection("statements")
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(1)
-                .get()
-                .addOnCompleteListener(task -> {
-                    loadingProgressBar.setVisibility(View.GONE);
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                loadingProgressBar.setVisibility(View.GONE);
+                Toast.makeText(DashboardActivity.this, "Failed to load stories", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
-                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            if (document.contains("transactions")) {
-                                List<Map<String, Object>> transactionMaps = (List<Map<String, Object>>) document.get("transactions");
-
-                                if (transactionMaps != null && !transactionMaps.isEmpty()) {
-                                    List<Transaction> transactions = new ArrayList<>();
-
-                                    for (Map<String, Object> transactionMap : transactionMaps) {
-                                        long timestamp = transactionMap.get("date") instanceof Long ? (Long) transactionMap.get("date") : 0;
-                                        Date date = new Date(timestamp);
-                                        String description = (String) transactionMap.getOrDefault("description", "Unknown");
-                                        double amount = transactionMap.get("amount") instanceof Number ? ((Number) transactionMap.get("amount")).doubleValue() : 0.0;
-                                        String category = (String) transactionMap.getOrDefault("category", "Other");
-
-                                        transactions.add(new Transaction(date, description, amount, category));
+    private void loadTransactions() {
+        dbRef.child("statements").orderByChild("timestamp").limitToLast(1)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            for (DataSnapshot statementSnapshot : snapshot.getChildren()) {
+                                List<Transaction> transactions = new ArrayList<>();
+                                for (DataSnapshot transactionSnapshot : statementSnapshot.child("transactions").getChildren()) {
+                                    Transaction transaction = transactionSnapshot.getValue(Transaction.class);
+                                    if (transaction != null) {
+                                        transactions.add(transaction);
                                     }
-
-                                    // Generate charts
-                                    generateCategoryPieChart(transactions);
-                                    generateMonthlyBarChart(transactions);
-                                    return;
                                 }
+                                generateCategoryPieChart(transactions);
+                                generateMonthlyBarChart(transactions);
                             }
                         }
                     }
-                    showNoDataMessage();
-                });
-    }
 
-    private void showNoDataMessage() {
-        categoryPieChart.setVisibility(View.GONE);
-        monthlyBarChart.setVisibility(View.GONE);
-        noDataText.setVisibility(View.VISIBLE);
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(DashboardActivity.this, "Failed to load transactions", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void generateCategoryPieChart(List<Transaction> transactions) {
         Map<String, Double> categoryTotals = new HashMap<>();
-
         for (Transaction transaction : transactions) {
             if (transaction.getAmount() < 0) {
                 String category = transaction.getCategory();
@@ -157,12 +143,11 @@ public class DashboardActivity extends AppCompatActivity {
         }
 
         PieDataSet dataSet = new PieDataSet(entries, "Spending by Category");
-        dataSet.setColors(getCustomColors());
+        dataSet.setColors(Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.CYAN);
         dataSet.setValueTextColor(Color.WHITE);
         dataSet.setValueTextSize(12f);
 
         PieData data = new PieData(dataSet);
-
         categoryPieChart.setData(data);
         categoryPieChart.setDescription(null);
         categoryPieChart.setCenterText("Spending\nby Category");
@@ -188,28 +173,19 @@ public class DashboardActivity extends AppCompatActivity {
         }
 
         List<BarEntry> entries = new ArrayList<>();
-        List<String> labels = new ArrayList<>();
         int index = 0;
-
         for (Map.Entry<String, Double> entry : monthlyTotals.entrySet()) {
             entries.add(new BarEntry(index, entry.getValue().floatValue()));
-            labels.add(entry.getKey());
             index++;
         }
 
         BarDataSet dataSet = new BarDataSet(entries, "Monthly Spending");
-        dataSet.setColors(getCustomColors());
+        dataSet.setColor(Color.MAGENTA);
         dataSet.setValueTextColor(Color.WHITE);
         dataSet.setValueTextSize(12f);
 
-        monthlyBarChart.setData(new BarData(dataSet));
+        BarData data = new BarData(dataSet);
+        monthlyBarChart.setData(data);
         monthlyBarChart.invalidate();
-    }
-
-    private int[] getCustomColors() {
-        return new int[]{
-                ContextCompat.getColor(this, R.color.colorPrimary),
-                ContextCompat.getColor(this, R.color.colorAccent)
-        };
     }
 }
